@@ -1,5 +1,5 @@
 # Hexo desktop visual management software
- 适用于患有懒病的user，简化了hexo写博客的操作流程，喜欢的可以给个**Star！**谢谢！
+ Hexo可视化轻量化桌面创建文章预览上传文件，简化了hexo写博客的操作流程，喜欢的可以给个**Star！**谢谢！
 
 ## 简单介绍：
 
