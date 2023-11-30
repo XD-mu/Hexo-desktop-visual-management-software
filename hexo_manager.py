@@ -11,7 +11,9 @@ class HexoManager:
         self.root.title("Hexo Blog Manager")
         self.hexo_process = None
         self.create_widgets()
-
+        # 设置窗口图标
+        self.root.iconbitmap(r'E:/HexoLearningCode/favicon.ico')
+        
     def create_widgets(self):
         # Button and Input Area
         top_frame = tk.Frame(self.root)
@@ -50,7 +52,35 @@ class HexoManager:
         # Output Text Box
         self.output_text = tk.Text(self.root, height=10, width=50, bg="#000000", fg="#FFFFFF")
         self.output_text.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+        
+        # 已有文章查看按钮
+        self.view_articles_button = tk.Button(top_frame, text="已有文章查看", command=self.toggle_article_list, bg="#ADD8E6")
+        self.view_articles_button.pack(side=tk.LEFT, padx=5)
 
+        # 创建一个下拉列表以显示文章列表，并设置样式
+        self.article_dropdown = tk.Listbox(self.root, height=10, width=50, bg="#F0F0F0", fg="#000000", font=('Arial', 10))
+        articles_dir = "E:/HexoLearningCode/source/_posts"
+        md_files = [f[:-3] for f in os.listdir(articles_dir) if f.endswith('.md')]
+        for file in md_files:
+            self.article_dropdown.insert(tk.END, file)
+        self.article_dropdown.bind('<<ListboxSelect>>', self.open_selected_article)
+        
+    def toggle_article_list(self):
+        if hasattr(self, 'article_dropdown') and self.article_dropdown.winfo_viewable():
+            self.article_dropdown.place_forget()  # 隐藏下拉列表
+        else:
+            # 显示下拉列表并设置合适的位置和大小
+            x_position = self.view_articles_button.winfo_x() + self.view_articles_button.winfo_width() + 10  # 在按钮右侧留出一些空间
+            y_position = self.view_articles_button.winfo_y()
+            self.article_dropdown.place(x=x_position, y=y_position, width=200, height=200)
+
+    def open_selected_article(self, event):
+        selection = event.widget.curselection()
+        if selection:
+            selected_article = event.widget.get(selection[0])
+            typora_path = "D:/Typora/Typora.exe"  # 保持与之前的路径一致
+            file_path = f"E:/HexoLearningCode/source/_posts/{selected_article}.md"
+            subprocess.Popen([typora_path, file_path])
     def on_entry_click(self, event):
         """Clear the entry on focus."""
         if self.article_name_entry.get() == "请输入文章标题":
@@ -64,8 +94,15 @@ class HexoManager:
             file_path = f"E:/HexoLearningCode/source/_posts/{article_name}.md" #修改为你的电脑博客本地Hexo文件夹路径
             subprocess.Popen([typora_path, file_path])
             self.article_name_entry.delete(0, tk.END)
-
-
+            self.refresh_article_list()  # 调用刷新文章列表的函数
+            
+    def refresh_article_list(self):
+        if hasattr(self, 'article_dropdown'):
+            self.article_dropdown.delete(0, tk.END)  # 清空列表
+            articles_dir = "E:/HexoLearningCode/source/_posts"
+            md_files = [f[:-3] for f in os.listdir(articles_dir) if f.endswith('.md')]
+            for file in md_files:
+                self.article_dropdown.insert(tk.END, file)
     def run_command(self, command):
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd="E:/HexoLearningCode")#注意修改为你的电脑博客本地Hexo文件夹路径
         output, error = process.communicate()
@@ -91,5 +128,5 @@ class HexoManager:
 if __name__ == "__main__":
     root = tk.Tk()
     app = HexoManager(root)
-    root.geometry("800x400")
+    root.geometry("950x400")
     root.mainloop()
