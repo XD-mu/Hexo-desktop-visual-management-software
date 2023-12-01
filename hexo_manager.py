@@ -118,11 +118,14 @@ class HexoManager:
         self.scroll_to_end()
 
     def stop_serve(self):
-        if self.hexo_process:
-            self.hexo_process.terminate()
-            self.hexo_process = None
-        self.output_text.insert(tk.END, "Stop Serve FUNCTION FINISHED!\n")
+        try:
+            # 执行taskkill命令以结束所有node.exe进程
+            subprocess.run("taskkill /f /t /im node.exe", check=True, shell=True)
+            self.output_text.insert(tk.END, "Node.js server on port 4000 has been stopped.\n")
+        except subprocess.CalledProcessError as e:
+            self.output_text.insert(tk.END, f"Error stopping Node.js server: {e}\n")
         self.scroll_to_end()
+
     def scroll_to_end(self):
         self.output_text.see(tk.END)
 if __name__ == "__main__":
