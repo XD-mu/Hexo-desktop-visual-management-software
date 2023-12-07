@@ -4,6 +4,7 @@ import subprocess
 import threading
 import os
 import re
+import time
 
 class HexoManager:
     def __init__(self, root):
@@ -13,12 +14,22 @@ class HexoManager:
         self.create_widgets()
         # 设置窗口图标
         self.root.iconbitmap(r'E:/HexoLearningCode/favicon.ico')
-        
+    def toggle_template_list(self):
+        if hasattr(self, 'template_dropdown') and self.template_dropdown.winfo_viewable():
+            self.template_dropdown.place_forget()  # 隐藏模板下拉列表
+        else:
+            # 显示模板下拉列表并设置合适的位置和大小
+            x_position = self.template_button.winfo_x() + self.template_button.winfo_width() + 10  # 在按钮右侧留出一些空间
+            y_position = self.template_button.winfo_y()
+            self.template_dropdown.place(x=x_position, y=y_position, width=200, height=200)
+
     def create_widgets(self):
         # Button and Input Area
         top_frame = tk.Frame(self.root)
         top_frame.pack(padx=10, pady=5, fill=tk.X)
-
+        
+        self.template_button = tk.Button(top_frame, text="选择模板", command=self.toggle_template_list, bg="#ADD8E6")
+        self.template_button.pack(side=tk.LEFT, padx=5)
         # Create Article Button
         self.create_button = tk.Button(top_frame, text="创建新文章", command=self.create_article, bg="#ADD8E6")
         self.create_button.pack(side=tk.LEFT, padx=5)
@@ -56,6 +67,13 @@ class HexoManager:
         # 已有文章查看按钮
         self.view_articles_button = tk.Button(top_frame, text="已有文章查看", command=self.toggle_article_list, bg="#ADD8E6")
         self.view_articles_button.pack(side=tk.LEFT, padx=5)
+        
+        self.template_dropdown = tk.Listbox(self.root, height=10, width=50, bg="#F0F0F0", fg="#000000", font=('Arial', 10))
+        templates_dir = "E:/HexoLearningCode/scaffolds"
+        md_files = [f[:-3] for f in os.listdir(templates_dir) if f.endswith('.md')]
+        for file in md_files:
+            self.template_dropdown.insert(tk.END, file)
+        self.template_dropdown.bind('<<ListboxSelect>>', self.select_template)
 
         # 创建一个下拉列表以显示文章列表，并设置样式
         self.article_dropdown = tk.Listbox(self.root, height=10, width=50, bg="#F0F0F0", fg="#000000", font=('Arial', 10))
@@ -89,13 +107,24 @@ class HexoManager:
     def create_article(self):
         article_name = self.article_name_entry.get()
         if article_name and article_name != "请输入文章标题":
-            self.run_command(f"hexo new post \"{article_name}\"")
-            typora_path = "D:/Typora/Typora.exe" #修改为你的电脑博客本地Markdown编辑器路径
-            file_path = f"E:/HexoLearningCode/source/_posts/{article_name}.md" #修改为你的电脑博客本地Hexo文件夹路径
-            subprocess.Popen([typora_path, file_path])
+            # 修改为使用选中的模板
+            template_command = f"hexo new {self.selected_template} \"{article_name}\"" if hasattr(self, 'selected_template') else f"hexo new post \"{article_name}\""
+            self.run_command(template_command)
+
+            # 延时启动Typora
+            typora_path = "D:/Typora/Typora.exe"
+            file_path = f"E:/HexoLearningCode/source/_posts/{article_name}.md"
+            threading.Timer(2.0, lambda: subprocess.Popen([typora_path, file_path])).start()  # 2秒后启动Typora
+
             self.article_name_entry.delete(0, tk.END)
-            self.refresh_article_list()  # 调用刷新文章列表的函数
+            self.refresh_article_list()  # 刷新文章列表
             
+            
+    def select_template(self, event):
+        selection = event.widget.curselection()
+        if selection:
+            self.selected_template = event.widget.get(selection[0])
+                       
     def refresh_article_list(self):
         if hasattr(self, 'article_dropdown'):
             self.article_dropdown.delete(0, tk.END)  # 清空列表
